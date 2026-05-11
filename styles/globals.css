@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #080E1A;
+    --foreground: #E8DCC8;
+    --card: #0F1D32;
+    --card-foreground: #E8DCC8;
+    --popover: #0F1D32;
+    --popover-foreground: #E8DCC8;
+    --primary: #C9A84C;
+    --primary-foreground: #080E1A;
+    --secondary: #4A7C59;
+    --secondary-foreground: #E8DCC8;
+    --muted: #152238;
+    --muted-foreground: #8A9BB0;
+    --accent: #B87333;
+    --accent-foreground: #080E1A;
+    --destructive: #C95D5D;
+    --destructive-foreground: #E8DCC8;
+    --border: #1E3A5F;
+    --input: #1E3A5F;
+    --ring: #C9A84C;
+    --radius: 0.625rem;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display", ui-serif, Georgia, serif;
+  }
+}
