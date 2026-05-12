@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import Layout from "@/components/Layout";
 import ChatThread, { ChatMessage } from "@/components/ChatThread";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ClassificationResult } from "@/skills/classify-enquiry";
 import { RoutingResult } from "@/skills/route-enquiry";
 import { ResponseResult } from "@/skills/generate-response";
@@ -54,6 +56,8 @@ export default function ConversationPage() {
   }, []);
 
   const handleSubmit = async () => {
+    if (loading || !enquiry.trim()) return;
+
     if (!config) {
       setConfigError("No AI configuration found. Please configure your provider first.");
       return;
@@ -70,6 +74,8 @@ export default function ConversationPage() {
     };
     setMessages((prev) => [...prev, clientMsg]);
 
+    let processed: ProcessResponse | null = null;
+
     try {
       const res = await fetch("/api/process", {
         method: "POST",
@@ -83,7 +89,7 @@ export default function ConversationPage() {
         }),
       });
       const data = await res.json();
-      const processed = data as ProcessResponse;
+      processed = data as ProcessResponse;
 
       if (!res.ok) {
         setMessages((prev) => [
@@ -91,12 +97,12 @@ export default function ConversationPage() {
           {
             id: makeId(),
             role: "team",
-            content: processed.error || "Failed to process enquiry. Please try again.",
+            content: processed?.error || "Failed to process enquiry. Please try again.",
             timestamp: Date.now(),
           },
         ]);
       } else {
-        const draft = processed.response?.draft || processed.draft;
+        const draft = processed.response?.draft ?? processed.draft;
         if (draft && !processed.flags.needs_review) {
           const previewMsg: ChatMessage = {
             id: makeId(),
@@ -108,19 +114,6 @@ export default function ConversationPage() {
           setMessages((prev) => [...prev, previewMsg]);
           setPreviewId(previewMsg.id);
         }
-
-        const record: TeamRecord = {
-          ...processed,
-          id: makeId(),
-          timestamp: Date.now(),
-          enquiry,
-        };
-        const stored = localStorage.getItem("teamHistory");
-        const history = stored ? JSON.parse(stored) : {};
-        const team = processed.routing?.team || "Unassigned";
-        if (!history[team]) history[team] = [];
-        history[team].push(record);
-        localStorage.setItem("teamHistory", JSON.stringify(history));
       }
     } catch {
       setMessages((prev) => [
@@ -136,6 +129,25 @@ export default function ConversationPage() {
       setLoading(false);
       setEnquiry("");
     }
+
+    if (processed) {
+      try {
+        const stored = localStorage.getItem("teamHistory");
+        const history = stored ? (JSON.parse(stored) as Record<string, TeamRecord[]>) : {};
+        const team = processed.routing?.team || "Unassigned";
+        if (!history[team]) history[team] = [];
+        const record: TeamRecord = {
+          ...processed,
+          id: makeId(),
+          timestamp: Date.now(),
+          enquiry,
+        };
+        history[team].push(record);
+        localStorage.setItem("teamHistory", JSON.stringify(history));
+      } catch {
+        console.warn("Failed to persist team history");
+      }
+    }
   };
 
   const handleFinalizePreview = () => {
@@ -144,6 +156,29 @@ export default function ConversationPage() {
       prev.map((msg) => (msg.id === previewId ? { ...msg, preview: false } : msg))
     );
     setPreviewId(null);
+
+    try {
+      const stored = localStorage.getItem("teamHistory");
+      if (!stored) return;
+      const history = JSON.parse(stored) as Record<string, TeamRecord[]>;
+      let lastRecord: TeamRecord | null = null;
+      let lastTeam: string | null = null;
+      for (const team of Object.keys(history)) {
+        const records = history[team];
+        if (!Array.isArray(records) || records.length === 0) continue;
+        const last = records[records.length - 1];
+        if (!lastRecord || last.timestamp > lastRecord.timestamp) {
+          lastRecord = last;
+          lastTeam = team;
+        }
+      }
+      if (lastRecord && lastTeam) {
+        lastRecord.sent = true;
+        localStorage.setItem("teamHistory", JSON.stringify(history));
+      }
+    } catch {
+      console.warn("Failed to update team history sent state");
+    }
   };
 
   return (
@@ -156,10 +191,11 @@ export default function ConversationPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.3 }}
+            role="alert"
             className="mb-8 bg-card border border-accent/30 rounded-xl p-5 flex items-center justify-between shadow-md"
           >
             <div className="flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent flex-shrink-0">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent flex-shrink-0">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4" />
                 <path d="M12 16h.01" />
@@ -169,9 +205,12 @@ export default function ConversationPage() {
                 <p className="text-xs text-muted-foreground mt-0.5">{configError}</p>
               </div>
             </div>
-            <Button variant="secondary" onClick={() => router.push("/configure")} className="cursor-pointer transition-all duration-200">
+            <Link
+              href="/configure"
+              className={cn(buttonVariants({ variant: "secondary" }), "cursor-pointer transition-all duration-200")}
+            >
               Go to Configuration
-            </Button>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
