@@ -13,7 +13,7 @@ interface AIConfig {
   baseUrl?: string;
 }
 
-const TEAMS = ["Sales", "Technical Support", "Complaints", "General", "Unassigned"];
+const TEAMS = ["Sales", "Technical Support", "Complaints", "General"];
 
 export default function Home() {
   const [config, setConfig] = useState<AIConfig | null>(null);
@@ -24,7 +24,6 @@ export default function Home() {
     "Technical Support": [],
     Complaints: [],
     General: [],
-    Unassigned: [],
   });
 
   useEffect(() => {
@@ -92,6 +91,30 @@ export default function Home() {
         teamHistory={teamHistory}
         activeTab={activeTeamTab}
         onTabChange={setActiveTeamTab}
+        onSendResponse={(recordId) => {
+          setTeamHistory((prev) => {
+            const next: Record<string, TeamRecord[]> = {};
+            for (const team of Object.keys(prev)) {
+              next[team] = prev[team].map((r) =>
+                r.id === recordId ? { ...r, sent: true } : r
+              );
+            }
+            localStorage.setItem("teamHistory", JSON.stringify(next));
+            return next;
+          });
+        }}
+        onSaveManualResponse={(recordId, response) => {
+          setTeamHistory((prev) => {
+            const next: Record<string, TeamRecord[]> = {};
+            for (const team of Object.keys(prev)) {
+              next[team] = prev[team].map((r) =>
+                r.id === recordId ? { ...r, manualResponse: response } : r
+              );
+            }
+            localStorage.setItem("teamHistory", JSON.stringify(next));
+            return next;
+          });
+        }}
       />
     </Layout>
   );

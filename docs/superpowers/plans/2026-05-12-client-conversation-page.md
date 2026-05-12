@@ -176,7 +176,7 @@ interface AIConfig {
   baseUrl?: string;
 }
 
-const TEAMS = ["Sales", "Technical Support", "Complaints", "General", "Unassigned"];
+const TEAMS = ["Sales", "Technical Support", "Complaints", "General"];
 
 export default function Home() {
   const router = useRouter();
@@ -188,7 +188,6 @@ export default function Home() {
     "Technical Support": [],
     Complaints: [],
     General: [],
-    Unassigned: [],
   });
 
   useEffect(() => {
@@ -394,7 +393,7 @@ export default function ConversationPage() {
         };
         const stored = localStorage.getItem("teamHistory");
         const history = stored ? JSON.parse(stored) : {};
-        const team = processed.routing?.team || "Unassigned";
+        const team = processed.routing?.team || "General";
         if (!history[team]) history[team] = [];
         history[team].push(record);
         localStorage.setItem("teamHistory", JSON.stringify(history));
@@ -545,6 +544,55 @@ npm run dev
 - [ ] **Step 4: Final commit (if any fixes were needed)**
 
 If no fixes were needed, skip. If fixes were applied, commit them with an appropriate message.
+
+---
+
+### Task 6: Background Job Queue for Batch Processing
+
+**Files:**
+- **Create:** `src/lib/process-enquiry.ts`
+- **Create:** `src/lib/queue.ts`
+- **Create:** `src/lib/worker.ts`
+- **Create:** `pages/api/process-batch.ts`
+- **Create:** `pages/api/job-status.ts`
+- **Modify:** `pages/api/process.ts`
+- **Modify:** `pages/conversation.tsx`
+- **Modify:** `package.json`
+
+- [ ] **Step 1: Extract shared AI processing logic**
+
+Create `src/lib/process-enquiry.ts` with the core `classifyEnquiry → routeEnquiry → generateResponse` flow, extracted from `pages/api/process.ts`.
+
+- [ ] **Step 2: Create BullMQ queue and worker**
+
+Create `src/lib/queue.ts` (Queue + `addEnquiryJob` + `getJobStatus`) and `src/lib/worker.ts` (Worker with concurrency 2, 3 retries, exponential backoff).
+
+- [ ] **Step 3: Create batch and status API routes**
+
+Create `pages/api/process-batch.ts` (enqueue N jobs) and `pages/api/job-status.ts` (return state/result for job IDs).
+
+- [ ] **Step 4: Refactor single-item API to use shared logic**
+
+Update `pages/api/process.ts` to call `processEnquiry()` from the shared library.
+
+- [ ] **Step 5: Update frontend to enqueue and poll**
+
+Update `pages/conversation.tsx`:
+- `handleProcessSelected` calls `/api/process-batch` instead of looping over `/api/process`
+- Adds `activeJobIds` state
+- Adds `useEffect` polling `/api/job-status` every 2s
+- Updates item statuses as jobs complete
+
+- [ ] **Step 6: Add worker script to package.json**
+
+Add `"worker": "tsx src/lib/worker.ts"` to scripts.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/lib/process-enquiry.ts src/lib/queue.ts src/lib/worker.ts pages/api/process-batch.ts pages/api/job-status.ts pages/api/process.ts pages/conversation.tsx package.json docs/
+git commit -m "feat: add BullMQ background job queue for batch AI processing"
+```
 
 ---
 

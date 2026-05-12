@@ -98,7 +98,17 @@ A new `src/components/Layout.tsx` wraps every page. It renders:
    - A system/info message (or just the response draft) is shown in the chat thread.
    - A "Send Response" button appears if a draft exists.
 7. Clicking "Send Response" appends a `role: "team"` message to `messages`.
-8. **No data is sent back to `/` index page automatically.** If the user wants the record to appear in the team history, they must navigate back to `/`. (Alternatively, we could keep `teamHistory` in `localStorage` or a global context, but that is out of scope for this split.)
+8. **No data is sent back to `/` index page automatically.** If the user wants the record to appear in the team history, they must navigate back to `/`.
+
+### Enquiries Tab (`/conversation` → Inbox)
+
+1. User selects one or more enquiries via checkboxes.
+2. User clicks "Process Selected".
+3. `POST /api/process-batch` enqueues jobs into BullMQ (Redis-backed queue).
+4. Items show "Processing" status immediately.
+5. Frontend polls `POST /api/job-status` every 2 seconds.
+6. As jobs complete, items update to "Done" with classification/routing/response details.
+7. Completed results are persisted to `localStorage` so the Dashboard (`/`) can display them.
 
 ---
 

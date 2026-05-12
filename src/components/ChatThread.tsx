@@ -16,10 +16,14 @@ interface Props {
   onChange: (val: string) => void;
   onSubmit: () => void;
   loading: boolean;
+  senderName?: string;
+  onSenderNameChange?: (val: string) => void;
+  senderEmail?: string;
+  onSenderEmailChange?: (val: string) => void;
 }
 
-const SENDER_NAME = "Sarah Thompson";
-const SENDER_INITIALS = "ST";
+const DEFAULT_SENDER_NAME = "Sarah Thompson";
+const DEFAULT_SENDER_INITIALS = "ST";
 
 const SAMPLES = [
   "I am interested in your strata management services. Can we book a consultation?",
@@ -31,8 +35,10 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function ChatThread({ messages, value, onChange, onSubmit, loading }: Props) {
+export default function ChatThread({ messages, value, onChange, onSubmit, loading, senderName, onSenderNameChange, senderEmail, onSenderEmailChange }: Props) {
   const id = useId();
+  const displayName = senderName?.trim() || DEFAULT_SENDER_NAME;
+  const displayInitials = displayName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <motion.div
@@ -97,7 +103,7 @@ export default function ChatThread({ messages, value, onChange, onSubmit, loadin
                   aria-hidden="true"
                 >
                   {msg.role === "client" ? (
-                    SENDER_INITIALS
+                    displayInitials
                   ) : (
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -108,7 +114,7 @@ export default function ChatThread({ messages, value, onChange, onSubmit, loadin
 
                 <div className={`max-w-[85%] flex flex-col ${msg.role === "team" ? "items-end" : ""}`}>
                   <p className="text-[11px] text-muted-foreground mb-0.5 font-medium">
-                    {msg.role === "client" ? SENDER_NAME : `${msg.team || "Team"} Team`}
+                    {msg.role === "client" ? displayName : `${msg.team || "Team"} Team`}
                   </p>
                   <motion.div
                     className={`px-4 py-2.5 rounded-2xl border ${
@@ -132,6 +138,33 @@ export default function ChatThread({ messages, value, onChange, onSubmit, loadin
       </div>
 
       <div className="p-5 pt-0 space-y-4 border-t border-border" aria-live="polite" aria-busy={loading}>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor={`${id}-name`} className="text-sm font-medium text-foreground mb-1 block">Sender Name</label>
+            <input
+              id={`${id}-name`}
+              type="text"
+              value={senderName || ""}
+              onChange={(e) => onSenderNameChange?.(e.target.value)}
+              placeholder="e.g. John Smith"
+              className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:opacity-50"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label htmlFor={`${id}-email`} className="text-sm font-medium text-foreground mb-1 block">Sender Email</label>
+            <input
+              id={`${id}-email`}
+              type="email"
+              value={senderEmail || ""}
+              onChange={(e) => onSenderEmailChange?.(e.target.value)}
+              placeholder="e.g. john@example.com"
+              className="w-full px-3 py-2 bg-background border border-border rounded-xl text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:opacity-50"
+              disabled={loading}
+            />
+          </div>
+        </div>
+
         <div className="relative">
           <label htmlFor={id} className="text-sm font-medium text-foreground mb-1 block">Client enquiry</label>
           <textarea
