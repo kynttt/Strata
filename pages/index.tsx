@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Layout from "@/components/Layout";
 import TeamTabsPanel, { TeamRecord } from "@/components/TeamTabsPanel";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface AIConfig {

@@ -35,38 +35,35 @@ export default function Layout({ children }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/">
-              <a
-                className={cn(
-                  buttonVariants({ variant: activeRoute === "/" ? "secondary" : "ghost" }),
-                  "cursor-pointer"
-                )}
-                aria-current={activeRoute === "/" ? "page" : undefined}
-              >
-                Dashboard
-              </a>
+            <Link
+              href="/"
+              className={cn(
+                buttonVariants({ variant: activeRoute === "/" ? "secondary" : "ghost" }),
+                "cursor-pointer"
+              )}
+              aria-current={activeRoute === "/" ? "page" : undefined}
+            >
+              Dashboard
             </Link>
-            <Link href="/conversation">
-              <a
-                className={cn(
-                  buttonVariants({ variant: activeRoute === "/conversation" ? "secondary" : "ghost" }),
-                  "cursor-pointer"
-                )}
-                aria-current={activeRoute === "/conversation" ? "page" : undefined}
-              >
-                Conversation
-              </a>
+            <Link
+              href="/conversation"
+              className={cn(
+                buttonVariants({ variant: activeRoute === "/conversation" ? "secondary" : "ghost" }),
+                "cursor-pointer"
+              )}
+              aria-current={activeRoute === "/conversation" ? "page" : undefined}
+            >
+              Conversation
             </Link>
-            <Link href="/configure">
-              <a
-                className={cn(
-                  buttonVariants({ variant: "outline" }),
-                  "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50"
-                )}
-                aria-current={activeRoute === "/configure" ? "page" : undefined}
-              >
-                Configure AI
-              </a>
+            <Link
+              href="/configure"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/50"
+              )}
+              aria-current={activeRoute === "/configure" ? "page" : undefined}
+            >
+              Configure AI
             </Link>
           </div>
         </div>

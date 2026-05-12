@@ -48,7 +48,14 @@
       "Bash(netstat -ano)",
       "WebFetch(domain:localhost)",
       "PowerShell(Stop-Process *)",
-      "PowerShell(npm run *)"
+      "PowerShell(npm run *)",
+      "Bash(Get-ChildItem -Path . -Exclude node_modules)",
+      "Bash(Select-Object Name,Mode)",
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(Get-Content *)",
+      "Bash(pkill -f \"next dev\")",
+      "PowerShell(Test-Path *)",
+      "Bash(findstr \"node\")"
     ]
   }
 }

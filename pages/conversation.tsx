@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import Layout from "@/components/Layout";
 import ChatThread, { ChatMessage } from "@/components/ChatThread";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -34,7 +33,6 @@ function makeId() {
 }
 
 export default function ConversationPage() {
-  const router = useRouter();
   const [enquiry, setEnquiry] = useState("");
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<AIConfig | null>(null);

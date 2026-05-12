@@ -94,6 +94,7 @@ export default function ChatThread({ messages, value, onChange, onSubmit, loadin
                       ? "bg-accent/20 text-accent"
                       : "bg-primary/20 text-primary"
                   }`}
+                  aria-hidden="true"
                 >
                   {msg.role === "client" ? (
                     SENDER_INITIALS
