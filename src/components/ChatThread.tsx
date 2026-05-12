@@ -7,6 +7,7 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   team?: string;
+  preview?: boolean;
 }
 
 interface Props {
@@ -110,7 +111,9 @@ export default function ChatThread({ messages, value, onChange, onSubmit, loadin
                     className={`px-4 py-2.5 rounded-2xl border ${
                       msg.role === "client"
                         ? "bg-accent/10 border-accent/20 rounded-tl-sm"
-                        : "bg-primary/10 border-primary/20 rounded-tr-sm"
+                        : msg.preview
+                          ? "bg-primary/5 border-primary/30 border-dashed rounded-tr-sm opacity-80"
+                          : "bg-primary/10 border-primary/20 rounded-tr-sm"
                     }`}
                     whileHover={{ scale: 1.01 }}
                     transition={{ duration: 0.15 }}
