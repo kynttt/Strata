@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/router";
+import Link from "next/link";
 import Layout from "@/components/Layout";
 import TeamTabsPanel, { TeamRecord } from "@/components/TeamTabsPanel";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface AIConfig {
   providerType: "openai" | "anthropic" | "google" | "ollama";
@@ -15,7 +16,6 @@ interface AIConfig {
 const TEAMS = ["Sales", "Technical Support", "Complaints", "General", "Unassigned"];
 
 export default function Home() {
-  const router = useRouter();
   const [config, setConfig] = useState<AIConfig | null>(null);
   const [configError, setConfigError] = useState<string | null>(null);
   const [activeTeamTab, setActiveTeamTab] = useState("Sales");
@@ -64,10 +64,11 @@ export default function Home() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ duration: 0.3 }}
+            role="alert"
             className="mb-8 bg-card border border-accent/30 rounded-xl p-5 flex items-center justify-between shadow-md"
           >
             <div className="flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent flex-shrink-0">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent flex-shrink-0">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4" />
                 <path d="M12 16h.01" />
@@ -77,9 +78,12 @@ export default function Home() {
                 <p className="text-xs text-muted-foreground mt-0.5">{configError}</p>
               </div>
             </div>
-            <Button variant="secondary" onClick={() => router.push("/configure")} className="cursor-pointer transition-all duration-200">
+            <Link
+              href="/configure"
+              className={cn(buttonVariants({ variant: "secondary" }), "cursor-pointer transition-all duration-200")}
+            >
               Go to Configuration
-            </Button>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>
