@@ -22,6 +22,14 @@ export interface TeamRecord {
   manualResponse?: string;
   sender?: string;
   email?: string;
+  conversationId?: string;
+}
+
+interface AIConfig {
+  providerType: "openai" | "anthropic" | "google" | "ollama";
+  model: string;
+  apiKey?: string;
+  baseUrl?: string;
 }
 
 interface Props {
@@ -29,14 +37,18 @@ interface Props {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onSendResponse?: (recordId: string) => void;
+  onSaveEdit?: (recordId: string, draft: string) => void;
   onSaveManualResponse?: (recordId: string, response: string) => void;
+  onGenerateResponse?: (recordId: string, response: ResponseResult) => void;
+  config?: AIConfig | null;
 }
 
 const TABS = ["Sales", "Technical Support", "Complaints", "General"];
 
-export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onSendResponse, onSaveManualResponse }: Props) {
+export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onSendResponse, onSaveEdit, onSaveManualResponse, onGenerateResponse, config }: Props) {
   const records = teamHistory[activeTab] || [];
-  const [selectedRecord, setSelectedRecord] = useState<TeamRecord | null>(null);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const selectedRecord = selectedRecordId ? records.find((r) => r.id === selectedRecordId) || null : null;
 
   return (
     <motion.div
@@ -110,7 +122,7 @@ export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onS
                     key={record.id}
                     record={record}
                     index={i}
-                    onClick={() => setSelectedRecord(record)}
+                    onClick={() => setSelectedRecordId(record.id)}
                   />
                 ))}
               </div>
@@ -129,7 +141,7 @@ export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onS
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-40"
-              onClick={() => setSelectedRecord(null)}
+              onClick={() => setSelectedRecordId(null)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -142,11 +154,16 @@ export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onS
                 <EnquiryEntryCard
                   record={selectedRecord}
                   index={0}
+                  config={config}
                   onSendResponse={(id) => {
                     onSendResponse?.(id);
-                    setSelectedRecord(null);
+                    setSelectedRecordId(null);
                   }}
+                  onSaveEdit={onSaveEdit}
                   onSaveManualResponse={onSaveManualResponse}
+                  onGenerateResponse={(id, response) => {
+                    onGenerateResponse?.(id, response);
+                  }}
                 />
               </div>
             </motion.div>

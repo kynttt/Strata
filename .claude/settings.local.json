@@ -58,7 +58,10 @@
       "Bash(findstr \"node\")",
       "Bash(cmd *)",
       "Bash(Start-Sleep -Seconds 10)",
-      "Bash(Get-Content \"C:\\\\Users\\\\Kent\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\A--Strata-practical-exam\\\\05eb9614-0f3d-4a7a-8ae0-54e8ac79a84d\\\\tasks\\\\bkcyeo7c0.output\" -Raw)"
+      "Bash(Get-Content \"C:\\\\Users\\\\Kent\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\A--Strata-practical-exam\\\\05eb9614-0f3d-4a7a-8ae0-54e8ac79a84d\\\\tasks\\\\bkcyeo7c0.output\" -Raw)",
+      "PowerShell(try { $res = Invoke-WebRequest -Uri \"http://localhost:3001/\" -UseBasicParsing -TimeoutSec 10; Write-Host $res.StatusCode } catch { Write-Host \"Not ready: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Rename-Item *)",
+      "PowerShell(Remove-Item *)"
     ]
   }
 }

@@ -14,15 +14,12 @@ interface ProcessRequestBody {
 interface ProcessResponse {
   classification?: import("@/skills/classify-enquiry").ClassificationResult;
   routing?: import("@/skills/route-enquiry").RoutingResult;
-  response?: import("@/skills/generate-response").ResponseResult;
   flags: {
     needs_review: boolean;
     reason: string | null;
   };
   error?: string;
   routingError?: string;
-  responseError?: string;
-  draft?: string | null;
   sender?: string;
   email?: string;
 }

@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TeamRecord } from "./TeamTabsPanel";
+import { ResponseResult } from "@/skills/generate-response";
+
+interface AIConfig {
+  providerType: "openai" | "anthropic" | "google" | "ollama";
+  model: string;
+  apiKey?: string;
+  baseUrl?: string;
+}
 
 interface Props {
   record: TeamRecord;
   index: number;
   onSendResponse?: (recordId: string) => void;
+  onSaveEdit?: (recordId: string, draft: string) => void;
   onSaveManualResponse?: (recordId: string, response: string) => void;
+  onGenerateResponse?: (recordId: string, response: ResponseResult) => void;
+  config?: AIConfig | null;
 }
 
 const STATUS_CONFIG = {
@@ -85,10 +96,13 @@ export default function EnquiryEntryCard({
   record,
   index,
   onSendResponse,
+  onSaveEdit,
   onSaveManualResponse,
+  onGenerateResponse,
+  config,
 }: Props) {
   const status = getStatus(record);
-  const config = STATUS_CONFIG[status];
+  const statusConfig = STATUS_CONFIG[status];
   const dateStr = new Date(record.timestamp).toLocaleString("en-AU", {
     day: "numeric",
     month: "short",
@@ -104,16 +118,53 @@ export default function EnquiryEntryCard({
   const [sent, setSent] = useState(record.sent || false);
   const [manualText, setManualText] = useState(record.manualResponse || "");
   const [saved, setSaved] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (record.response) {
+      setEditedDraft(personalizeDraft(record.response.draft, record.sender));
+    }
+  }, [record.response, record.sender]);
+
+  useEffect(() => {
+    setSent(record.sent || false);
+  }, [record.sent]);
 
   const handleSend = () => {
     if (!onSendResponse) return;
+    onSaveEdit?.(record.id, editedDraft);
     onSendResponse(record.id);
     setSent(true);
+
+    if (record.conversationId && editedDraft) {
+      try {
+        const saved = localStorage.getItem("conversations");
+        if (saved) {
+          const conversations = JSON.parse(saved);
+          const conv = conversations.find((c: any) => c.id === record.conversationId);
+          if (conv) {
+            conv.messages = conv.messages || [];
+            conv.messages.push({
+              id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+              role: "team",
+              content: editedDraft,
+              timestamp: Date.now(),
+            });
+            localStorage.setItem("conversations", JSON.stringify(conversations));
+          }
+        }
+      } catch {
+        console.warn("Failed to update conversation with sent response");
+      }
+    }
   };
 
   const handleSaveEdit = () => {
     setIsEditing(false);
-    // The edited draft is preserved in local state; parent can be notified if needed
+    if (editedDraft.trim()) {
+      onSaveEdit?.(record.id, editedDraft);
+    }
   };
 
   const handleSaveManual = () => {
@@ -123,12 +174,44 @@ export default function EnquiryEntryCard({
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleGenerateResponse = async () => {
+    if (!config || !record.classification) return;
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const res = await fetch("/api/generate-response", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          enquiry: record.enquiry,
+          classification: record.classification.type,
+          providerType: config.providerType,
+          model: config.model,
+          apiKey: config.apiKey || undefined,
+          baseUrl: config.baseUrl || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setGenerateError(data.error || "Failed to generate response");
+        return;
+      }
+      if (data.response) {
+        onGenerateResponse?.(record.id, data.response);
+      }
+    } catch {
+      setGenerateError("Network error. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className={`group relative bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-300 ${config.borderColor} border-l-[4px]`}
+      className={`group relative bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-300 ${statusConfig.borderColor} border-l-[4px]`}
     >
       {/* ── Header ── */}
       <div className="px-5 py-4 bg-muted/20 rounded-t-xl">
@@ -159,9 +242,9 @@ export default function EnquiryEntryCard({
             </div>
           </div>
 
-          <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${config.bgBadge}`}>
-            {config.icon}
-            {config.label}
+          <span className={`flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${statusConfig.bgBadge}`}>
+            {statusConfig.icon}
+            {statusConfig.label}
           </span>
         </div>
 
@@ -316,8 +399,67 @@ export default function EnquiryEntryCard({
           </div>
         )}
 
+        {/* Generate Response */}
+        {!record.response && record.classification && record.routing && (
+          <div className="space-y-3">
+            <motion.button
+              type="button"
+              onClick={handleGenerateResponse}
+              disabled={isGenerating || !config}
+              whileHover={isGenerating || !config ? {} : { scale: 1.03 }}
+              whileTap={isGenerating || !config ? {} : { scale: 0.97 }}
+              className={`w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                isGenerating || !config
+                  ? "bg-muted text-muted-foreground border border-border"
+                  : "bg-primary text-primary-foreground hover:shadow"
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="animate-spin"
+                  >
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Generating response...
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 3v18" />
+                    <path d="M3 12h18" />
+                  </svg>
+                  Generate Response
+                </>
+              )}
+            </motion.button>
+            {generateError && (
+              <p className="text-xs text-red-600">{generateError}</p>
+            )}
+          </div>
+        )}
+
         {/* Clarification draft */}
-        {record.draft && (
+        {(record.classification?.draft || record.draft) && (
           <div className="bg-accent/5 border border-accent/15 rounded-lg p-4 space-y-2">
             <div className="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
@@ -327,7 +469,7 @@ export default function EnquiryEntryCard({
               </svg>
               <p className="text-sm font-semibold text-accent">Clarification needed</p>
             </div>
-            <p className="text-sm text-foreground leading-relaxed">{record.draft}</p>
+            <p className="text-sm text-foreground leading-relaxed">{record.classification?.draft || record.draft}</p>
           </div>
         )}
 

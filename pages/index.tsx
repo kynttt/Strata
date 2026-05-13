@@ -5,6 +5,7 @@ import Layout from "@/components/Layout";
 import TeamTabsPanel, { TeamRecord } from "@/components/TeamTabsPanel";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ResponseResult } from "@/skills/generate-response";
 
 interface AIConfig {
   providerType: "openai" | "anthropic" | "google" | "ollama";
@@ -91,6 +92,7 @@ export default function Home() {
         teamHistory={teamHistory}
         activeTab={activeTeamTab}
         onTabChange={setActiveTeamTab}
+        config={config}
         onSendResponse={(recordId) => {
           setTeamHistory((prev) => {
             const next: Record<string, TeamRecord[]> = {};
@@ -103,12 +105,38 @@ export default function Home() {
             return next;
           });
         }}
+        onSaveEdit={(recordId, draft) => {
+          setTeamHistory((prev) => {
+            const next: Record<string, TeamRecord[]> = {};
+            for (const team of Object.keys(prev)) {
+              next[team] = prev[team].map((r) =>
+                r.id === recordId && r.response
+                  ? { ...r, response: { ...r.response, draft } }
+                  : r
+              );
+            }
+            localStorage.setItem("teamHistory", JSON.stringify(next));
+            return next;
+          });
+        }}
         onSaveManualResponse={(recordId, response) => {
           setTeamHistory((prev) => {
             const next: Record<string, TeamRecord[]> = {};
             for (const team of Object.keys(prev)) {
               next[team] = prev[team].map((r) =>
                 r.id === recordId ? { ...r, manualResponse: response } : r
+              );
+            }
+            localStorage.setItem("teamHistory", JSON.stringify(next));
+            return next;
+          });
+        }}
+        onGenerateResponse={(recordId, response) => {
+          setTeamHistory((prev) => {
+            const next: Record<string, TeamRecord[]> = {};
+            for (const team of Object.keys(prev)) {
+              next[team] = prev[team].map((r) =>
+                r.id === recordId ? { ...r, response } : r
               );
             }
             localStorage.setItem("teamHistory", JSON.stringify(next));
