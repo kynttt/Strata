@@ -13,6 +13,8 @@ Your task: Draft a suggested response and recommended action for a staff member,
 - For new clients: enthusiastic, outline clear next steps.
 - For general questions: direct, helpful, invite further questions.
 - For needs_clarification: draft a polite follow-up asking for specific missing details.
+- Do not use em-dashes (—). Use commas or separate sentences instead so the tone stays natural and human.
+- Always sign off exactly as: Warm regards, Strata Team. Never use placeholders like [Your Name].
 
 ## Output Format
 

@@ -690,7 +690,7 @@ export default function ConversationPage() {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            Client Conversation
+            Chats
             {conversations.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-primary/20 text-primary font-semibold">
                 {conversations.length}
@@ -710,7 +710,7 @@ export default function ConversationPage() {
               <rect width="20" height="16" x="2" y="4" rx="2" />
               <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
             </svg>
-            Enquiries
+            Emails
             {demoEnquiries.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-primary/20 text-primary font-semibold">
                 {demoEnquiries.length}
@@ -954,7 +954,7 @@ export default function ConversationPage() {
                         )}
                         {activeConversation.classification && activeConversation.routing && (
                           <p className="text-[10px] text-muted-foreground font-medium">
-                            {activeConversation.classification.type.replace(/_/g, " ")} · {activeConversation.routing.team} · {activeConversation.routing.priority}
+                            {activeConversation.classification.type.replace(/_/g, " ")} · {activeConversation.routing.team} · {activeConversation.routing.priority} · {Math.round((activeConversation.classification.confidence || 0) * 100)}% confidence
                           </p>
                         )}
                       </div>

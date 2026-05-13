@@ -76,7 +76,7 @@ export default function EnquiryRow({ record, index, onClick }: Props) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-semibold text-foreground truncate">
+          <span className={`text-sm truncate ${record.sent ? "font-medium text-foreground/80" : "font-bold text-foreground"}`}>
             {record.sender || "Unknown Sender"}
           </span>
           {record.email && (
@@ -85,7 +85,9 @@ export default function EnquiryRow({ record, index, onClick }: Props) {
             </span>
           )}
         </div>
-        <p className="text-sm text-foreground/70 truncate">{record.enquiry}</p>
+        <p className={`text-sm truncate ${record.sent ? "text-foreground/60 font-normal" : "text-foreground font-semibold"}`}>
+          {record.enquiry}
+        </p>
       </div>
 
       {/* Meta */}
@@ -118,14 +120,24 @@ export default function EnquiryRow({ record, index, onClick }: Props) {
             </span>
           </>
         )}
+
       </div>
 
-      {/* Status + Timestamp */}
-      <div className="flex flex-col items-end gap-0.5 flex-shrink-0 min-w-[80px]">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusStyle.badge}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-          {statusStyle.label}
-        </span>
+      {/* Status / Responded + Timestamp */}
+      <div className="flex flex-col items-end gap-1 flex-shrink-0 min-w-[80px]">
+        {record.sent ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border bg-emerald-500/15 text-emerald-700 border-emerald-300 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            Responded
+          </span>
+        ) : status !== "completed" ? (
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusStyle.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+            {statusStyle.label}
+          </span>
+        ) : null}
         <span className="text-[10px] text-muted-foreground font-medium">{dateStr}</span>
       </div>
     </motion.div>

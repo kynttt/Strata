@@ -46,14 +46,14 @@ export default function Layout({ children }: Props) {
               Dashboard
             </Link>
             <Link
-              href="/conversation"
+              href="/enquiries"
               className={cn(
-                buttonVariants({ variant: activeRoute === "/conversation" ? "secondary" : "ghost" }),
+                buttonVariants({ variant: activeRoute === "/enquiries" ? "secondary" : "ghost" }),
                 "cursor-pointer"
               )}
-              aria-current={activeRoute === "/conversation" ? "page" : undefined}
+              aria-current={activeRoute === "/enquiries" ? "page" : undefined}
             >
-              Conversation
+              Enquiries
             </Link>
             <Link
               href="/configure"
