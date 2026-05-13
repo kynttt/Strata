@@ -62,7 +62,8 @@
       "PowerShell(try { $res = Invoke-WebRequest -Uri \"http://localhost:3001/\" -UseBasicParsing -TimeoutSec 10; Write-Host $res.StatusCode } catch { Write-Host \"Not ready: $\\($_.Exception.Message\\)\" })",
       "PowerShell(Rename-Item *)",
       "PowerShell(Remove-Item *)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(claude mcp *)"
     ]
   }
 }
