@@ -23,18 +23,18 @@ vercel login
 vercel --prod
 ```
 
-### Environment Variables
+### Environment Variables (Optional)
 
-Set these in the Vercel dashboard (Project Settings → Environment Variables):
+**No environment variables are required.** API keys are entered in the Configure AI page and stored in the browser's `localStorage`. They are sent from the frontend to the API routes in the request body.
+
+If you want to **pre-fill keys** for a shared deployment, you can set these in the Vercel dashboard (Project Settings → Environment Variables):
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | Optional | Pre-fills OpenAI key in the UI. Users can still enter their own. |
-| `ANTHROPIC_API_KEY` | Optional | Pre-fills Anthropic key. |
-| `GOOGLE_API_KEY` | Optional | Pre-fills Google Gemini key. |
-| `OLLAMA_BASE_URL` | Optional | Defaults to `http://localhost:11434`. Only needed if running Ollama remotely. |
-
-**Note:** API keys are optional as environment variables. Users can enter them directly in the Configure AI page, and they are stored in the browser's `localStorage` (never sent to the server except for the actual AI API calls).
+| `OPENAI_API_KEY` | No | Pre-fills OpenAI key in the UI. Users can still enter their own. |
+| `ANTHROPIC_API_KEY` | No | Pre-fills Anthropic key. |
+| `GOOGLE_API_KEY` | No | Pre-fills Google Gemini key. |
+| `OLLAMA_BASE_URL` | No | Defaults to `http://localhost:11434`. Only needed if running Ollama remotely. |
 
 ### What the `vercel.json` Does
 
