@@ -37,7 +37,13 @@ const SAMPLES = [
 ];
 
 function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const d = new Date(ts);
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hh = h % 12 || 12;
+  const mm = m < 10 ? `0${m}` : `${m}`;
+  return `${hh}:${mm} ${ampm}`;
 }
 
 export default function ChatThread({ messages, value, onChange, onSubmit, loading, senderName, onSenderNameChange, senderEmail, onSenderEmailChange, showHeader = true, showSenderFields = true, showInput = true, className }: Props) {

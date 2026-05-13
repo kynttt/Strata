@@ -92,9 +92,34 @@ export default function ConversationPage() {
   const [processingIds, setProcessingIds] = useState<string[]>([]);
   const [activeJobIds, setActiveJobIds] = useState<(string | number)[]>([]);
   const [drawerItem, setDrawerItem] = useState<import("@/components/GmailInbox").EnquiryItem | null>(null);
+  const [mounted, setMounted] = useState(false);
 
-  const [conversations, setConversations] = useState<Conversation[]>(SAMPLE_CONVERSATIONS);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(SAMPLE_CONVERSATIONS[0]?.id || null);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    try {
+      const saved = localStorage.getItem("conversations");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore corrupted data
+    }
+    return SAMPLE_CONVERSATIONS;
+  });
+
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem("activeConversationId");
+      if (saved) return saved;
+    } catch {
+      // ignore
+    }
+    return SAMPLE_CONVERSATIONS[0]?.id || null;
+  });
   const [selectedConversationIds, setSelectedConversationIds] = useState<string[]>([]);
 
   const SAMPLE_ENQUIRIES: import("@/components/GmailInbox").EnquiryItem[] = [
@@ -195,23 +220,6 @@ export default function ConversationPage() {
       }
     } else {
       setConfigError("No AI configuration found. Please configure your provider first.");
-    }
-
-    const savedConversations = localStorage.getItem("conversations");
-    if (savedConversations) {
-      try {
-        const parsed = JSON.parse(savedConversations) as Conversation[];
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setConversations(parsed);
-        }
-      } catch {
-        // ignore corrupted data
-      }
-    }
-
-    const savedActiveId = localStorage.getItem("activeConversationId");
-    if (savedActiveId) {
-      setActiveConversationId(savedActiveId);
     }
   }, []);
 
@@ -750,8 +758,14 @@ export default function ConversationPage() {
               transition={{ duration: 0.25, ease: "easeOut" }}
               className="flex gap-4 h-[calc(100vh-14rem)]"
             >
-              {/* Left sidebar */}
-              <div className="w-80 flex-shrink-0 bg-card rounded-xl border border-border shadow-md overflow-hidden flex flex-col">
+              {!mounted ? (
+                <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+                  Loading conversations...
+                </div>
+              ) : (
+                <>
+                  {/* Left sidebar */}
+                  <div className="w-80 flex-shrink-0 bg-card rounded-xl border border-border shadow-md overflow-hidden flex flex-col">
                 {/* Toolbar */}
                 <div className="px-3 py-2.5 border-b border-border bg-muted/30 flex items-center gap-2">
                   <button
@@ -847,7 +861,7 @@ export default function ConversationPage() {
 
                 {/* Conversation list */}
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                  {conversations.map((conv, index) => {
+                  {mounted && conversations.map((conv, index) => {
                     const isActive = activeConversationId === conv.id;
                     const isSelected = selectedConversationIds.includes(conv.id);
                     const lastMsg = conv.messages[conv.messages.length - 1];
@@ -910,9 +924,11 @@ export default function ConversationPage() {
                               {conv.sender}
                             </span>
                             <span className="text-[10px] text-muted-foreground flex-shrink-0 ml-1">
-                              {lastMsg
-                                ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                                : new Date(conv.messages[0]?.timestamp || conv.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                              {mounted
+                                ? (lastMsg
+                                    ? new Date(lastMsg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                    : new Date(conv.messages[0]?.timestamp || conv.timestamp || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
+                                : " "}
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground truncate">
@@ -1024,6 +1040,8 @@ export default function ConversationPage() {
                   </div>
                 )}
               </div>
+                </>
+              )}
             </motion.div>
           ) : (
             <motion.div
