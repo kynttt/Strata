@@ -97,7 +97,7 @@ export default function ConversationPage() {
   const [activeConversationId, setActiveConversationId] = useState<string | null>(SAMPLE_CONVERSATIONS[0]?.id || null);
   const [selectedConversationIds, setSelectedConversationIds] = useState<string[]>([]);
 
-  const [demoEnquiries, setDemoEnquiries] = useState<import("@/components/GmailInbox").EnquiryItem[]>([
+  const SAMPLE_ENQUIRIES: import("@/components/GmailInbox").EnquiryItem[] = [
     {
       id: "1",
       sender: "Sarah Thompson",
@@ -170,7 +170,20 @@ export default function ConversationPage() {
       category: "received",
       hasAttachment: false,
     },
-  ]);
+  ];
+
+  const [demoEnquiries, setDemoEnquiries] = useState<import("@/components/GmailInbox").EnquiryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("demoEnquiries");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore corrupted data
+    }
+    return SAMPLE_ENQUIRIES;
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("aiConfig");
@@ -217,6 +230,14 @@ export default function ConversationPage() {
       localStorage.removeItem("activeConversationId");
     }
   }, [activeConversationId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("demoEnquiries", JSON.stringify(demoEnquiries));
+    } catch {
+      console.warn("Failed to persist demo enquiries");
+    }
+  }, [demoEnquiries]);
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);
 

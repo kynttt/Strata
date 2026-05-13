@@ -73,8 +73,29 @@ function SectionTitle({ children, icon }: { children: React.ReactNode; icon: str
   );
 }
 
+function useMatchingTeamRecord(item: EnquiryItem | null) {
+  if (!item) return null;
+  try {
+    const stored = localStorage.getItem("teamHistory");
+    if (!stored) return null;
+    const history = JSON.parse(stored) as Record<string, Array<{ enquiry: string; sender?: string; email?: string; response?: { draft: string }; sent?: boolean }>>;
+    for (const team of Object.keys(history)) {
+      const match = history[team].find(
+        (r) =>
+          r.enquiry === item.snippet &&
+          (r.sender === item.sender || r.email === item.email)
+      );
+      if (match && match.sent && match.response?.draft) return match.response.draft;
+    }
+  } catch {
+    // ignore lookup errors
+  }
+  return null;
+}
+
 export default function EnquiryDrawer({ item, onClose }: Props) {
   const open = !!item;
+  const sentResponse = useMatchingTeamRecord(item);
 
   return (
     <AnimatePresence>
@@ -164,6 +185,24 @@ export default function EnquiryDrawer({ item, onClose }: Props) {
                     <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Body</p>
                     <p className="text-sm text-foreground/80 leading-relaxed">{item.snippet}</p>
                   </div>
+
+                  {sentResponse && (
+                    <>
+                      <div className="h-px bg-border" />
+                      <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-4 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
+                            <path d="M4 14h6v6H4z" />
+                            <path d="M4 4h6v6H4z" />
+                            <path d="M14 4h6v6h-6z" />
+                            <path d="M14 14h6v6h-6z" />
+                          </svg>
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-600">Sent Response</p>
+                        </div>
+                        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{sentResponse}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

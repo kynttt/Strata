@@ -375,7 +375,9 @@ export default function GmailInbox({
                     <div className="flex-1 min-w-0 flex items-center gap-4">
                       <span
                         className={`text-sm flex-shrink-0 w-32 truncate ${
-                          isUnread ? "font-bold text-foreground" : "font-medium text-foreground/80"
+                          item.status === "completed" || item.status === "error"
+                            ? "font-medium text-foreground/80"
+                            : "font-bold text-foreground"
                         }`}
                       >
                         {item.sender}
@@ -384,7 +386,9 @@ export default function GmailInbox({
                       <div className="flex-1 min-w-0 flex items-center gap-2">
                         <span
                           className={`text-sm truncate ${
-                            isUnread ? "font-semibold text-foreground" : "text-foreground/70"
+                            item.status === "completed" || item.status === "error"
+                              ? "text-foreground/70 font-normal"
+                              : "text-foreground font-semibold"
                           }`}
                         >
                           {item.subject}
@@ -414,24 +418,28 @@ export default function GmailInbox({
                           Processing
                         </span>
                       )}
-                      {item.status === "completed" && (
+
+                      {item.status === "completed" && item.routing && (
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border flex-shrink-0 ${TEAM_COLORS[item.routing.team] || "bg-emerald-500/10 text-emerald-600 border-emerald-200"}`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 14h6v6H4z" />
+                            <path d="M4 4h6v6H4z" />
+                            <path d="M14 4h6v6h-6z" />
+                            <path d="M14 14h6v6h-6z" />
+                          </svg>
+                          Routed to {item.routing.team}
+                        </span>
+                      )}
+
+                      {item.status === "completed" && !item.routing && (
                         <span className="flex items-center gap-1 text-xs text-green-600 font-medium flex-shrink-0">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M20 6 9 17l-5-5" />
                           </svg>
                           Done
                         </span>
                       )}
+
                       {item.status === "error" && (
                         <span className="flex items-center gap-1 text-xs text-destructive font-medium flex-shrink-0">
                           <svg
@@ -475,7 +483,9 @@ export default function GmailInbox({
                     {/* Timestamp */}
                     <span
                       className={`text-xs flex-shrink-0 ${
-                        isUnread ? "font-bold text-primary" : "text-muted-foreground"
+                        item.status === "completed" || item.status === "error"
+                          ? "text-muted-foreground"
+                          : "font-bold text-primary"
                       }`}
                     >
                       {item.timestamp}

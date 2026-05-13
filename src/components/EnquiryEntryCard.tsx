@@ -459,7 +459,7 @@ export default function EnquiryEntryCard({
         )}
 
         {/* Clarification draft */}
-        {(record.classification?.draft || record.draft) && (
+        {(record.classification?.draft || record.draft) && record.routing?.team !== "General" && (
           <div className="bg-accent/5 border border-accent/15 rounded-lg p-4 space-y-2">
             <div className="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
