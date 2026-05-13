@@ -7,9 +7,17 @@ interface Props {
   onRegenerate?: () => void;
   onSendResponse?: () => void;
   sent?: boolean;
+  senderName?: string;
 }
 
-export default function ResponseCard({ data, onRegenerate, onSendResponse, sent = false }: Props) {
+function personalizeDraft(draft: string, senderName?: string) {
+  if (senderName) {
+    return draft.replace(/\[Name\]/g, senderName);
+  }
+  return draft.replace(/Dear\s+\[Name\],?/gi, "Hello,").replace(/\[Name\]/g, "there");
+}
+
+export default function ResponseCard({ data, onRegenerate, onSendResponse, sent = false, senderName }: Props) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -19,8 +27,10 @@ export default function ResponseCard({ data, onRegenerate, onSendResponse, sent 
     };
   }, []);
 
+  const displayDraft = personalizeDraft(data.draft, senderName);
+
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(data.draft);
+    await navigator.clipboard.writeText(displayDraft);
     setCopied(true);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setCopied(false), 2000);
@@ -40,7 +50,7 @@ export default function ResponseCard({ data, onRegenerate, onSendResponse, sent 
       </div>
 
       <div className="bg-muted/50 border border-border rounded-xl p-4 max-h-72 overflow-y-auto mb-4">
-        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{data.draft}</p>
+        <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{displayDraft}</p>
       </div>
 
       <div className="flex items-start gap-2 mb-5 bg-secondary/10 border border-secondary/20 rounded-lg p-3">

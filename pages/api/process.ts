@@ -1,9 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { createProvider } from "@/providers/factory";
-import { classifyEnquiry, ClassificationResult } from "@/skills/classify-enquiry";
-import { routeEnquiry, RoutingResult } from "@/skills/route-enquiry";
-import { generateResponse, ResponseResult } from "@/skills/generate-response";
-import { ProviderError } from "@/providers/base";
+import { processEnquiry } from "@/lib/process-enquiry";
 
 interface ProcessRequestBody {
   enquiry: string;
@@ -11,20 +7,21 @@ interface ProcessRequestBody {
   model: string;
   apiKey?: string;
   baseUrl?: string;
+  sender?: string;
+  email?: string;
 }
 
 interface ProcessResponse {
-  classification?: ClassificationResult;
-  routing?: RoutingResult;
-  response?: ResponseResult;
+  classification?: import("@/skills/classify-enquiry").ClassificationResult;
+  routing?: import("@/skills/route-enquiry").RoutingResult;
   flags: {
     needs_review: boolean;
     reason: string | null;
   };
   error?: string;
   routingError?: string;
-  responseError?: string;
-  draft?: string | null;
+  sender?: string;
+  email?: string;
 }
 
 export default async function handler(
@@ -46,9 +43,15 @@ export default async function handler(
     });
   }
 
-  const { enquiry, providerType, model, apiKey, baseUrl } = body as ProcessRequestBody;
+  const { enquiry, providerType, model, apiKey, baseUrl, sender, email } = body as ProcessRequestBody;
 
-  if (!enquiry || typeof enquiry !== "string" || !providerType || !model || typeof model !== "string") {
+  if (
+    !enquiry ||
+    typeof enquiry !== "string" ||
+    !providerType ||
+    !model ||
+    typeof model !== "string"
+  ) {
     return res.status(400).json({
       flags: { needs_review: false, reason: null },
       error: "Missing required fields: enquiry, providerType, model",
@@ -63,66 +66,16 @@ export default async function handler(
     });
   }
 
-  try {
-    const provider = createProvider({ type: providerType, apiKey, baseUrl });
+  const result = await processEnquiry(enquiry, {
+    providerType,
+    model,
+    apiKey,
+    baseUrl,
+  });
 
-    // Step 1: Classify
-    const classifyRes = await classifyEnquiry(enquiry, provider, model);
-    if (classifyRes.error || !classifyRes.data) {
-      return res.status(500).json({
-        flags: { needs_review: true, reason: "Classification failed: " + classifyRes.error },
-        error: classifyRes.error,
-      });
-    }
-
-    const classification = classifyRes.data;
-    const needsReview = classification.confidence < 0.7 || classification.type === "needs_clarification";
-
-    // Step 2: Conditional downstream skills
-    let routing: RoutingResult | undefined;
-    let response: ResponseResult | undefined;
-    let routingError: string | undefined;
-    let responseError: string | undefined;
-
-    if (!needsReview) {
-      if (classification.type !== "general_question") {
-        const routeRes = await routeEnquiry(classification.type, enquiry, provider, model);
-        if (routeRes.data) {
-          routing = routeRes.data;
-        } else if (routeRes.error) {
-          routingError = routeRes.error;
-        }
-      }
-
-      const responseRes = await generateResponse(classification.type, enquiry, provider, model);
-      if (responseRes.data) {
-        response = responseRes.data;
-      } else if (responseRes.error) {
-        responseError = responseRes.error;
-      }
-    }
-
-    return res.status(200).json({
-      classification,
-      routing,
-      response,
-      flags: {
-        needs_review: needsReview,
-        reason: needsReview
-          ? classification.confidence < 0.7
-            ? "Low confidence classification"
-            : "Enquiry needs clarification"
-          : null,
-      },
-      routingError,
-      responseError,
-      draft: classification.draft,
-    });
-  } catch (err: unknown) {
-    const message = err instanceof ProviderError ? err.message : "Internal server error";
-    return res.status(500).json({
-      flags: { needs_review: true, reason: message },
-      error: message,
-    });
+  if (result.error) {
+    return res.status(500).json({ ...result, sender, email });
   }
+
+  return res.status(200).json({ ...result, sender, email });
 }

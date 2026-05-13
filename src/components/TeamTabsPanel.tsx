@@ -1,8 +1,7 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import ClassificationCard from "./ClassificationCard";
-import RoutingCard from "./RoutingCard";
-import ResponseCard from "./ResponseCard";
-import ClarificationCard from "./ClarificationCard";
+import EnquiryEntryCard from "./EnquiryEntryCard";
+import EnquiryRow from "./EnquiryRow";
 import { ClassificationResult } from "@/skills/classify-enquiry";
 import { RoutingResult } from "@/skills/route-enquiry";
 import { ResponseResult } from "@/skills/generate-response";
@@ -20,6 +19,17 @@ export interface TeamRecord {
   responseError?: string;
   draft?: string | null;
   sent?: boolean;
+  manualResponse?: string;
+  sender?: string;
+  email?: string;
+  conversationId?: string;
+}
+
+interface AIConfig {
+  providerType: "openai" | "anthropic" | "google" | "ollama";
+  model: string;
+  apiKey?: string;
+  baseUrl?: string;
 }
 
 interface Props {
@@ -27,12 +37,18 @@ interface Props {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onSendResponse?: (recordId: string) => void;
+  onSaveEdit?: (recordId: string, draft: string) => void;
+  onSaveManualResponse?: (recordId: string, response: string) => void;
+  onGenerateResponse?: (recordId: string, response: ResponseResult) => void;
+  config?: AIConfig | null;
 }
 
-const TABS = ["Sales", "Technical Support", "Complaints", "General", "Unassigned"];
+const TABS = ["Sales", "Technical Support", "Complaints", "General"];
 
-export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onSendResponse }: Props) {
+export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onSendResponse, onSaveEdit, onSaveManualResponse, onGenerateResponse, config }: Props) {
   const records = teamHistory[activeTab] || [];
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+  const selectedRecord = selectedRecordId ? records.find((r) => r.id === selectedRecordId) || null : null;
 
   return (
     <motion.div
@@ -100,69 +116,60 @@ export default function TeamTabsPanel({ teamHistory, activeTab, onTabChange, onS
                 <p className="text-xs text-muted-foreground mt-1 max-w-xs">Process a client enquiry to see it routed here.</p>
               </div>
             ) : (
-              records.map((record, i) => (
-                <motion.div
-                  key={record.id}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" as const }}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-                    <span className="font-medium">{new Date(record.timestamp).toLocaleString()}</span>
-                    <span className="text-border">•</span>
-                    <span className="truncate max-w-xs">{record.enquiry}</span>
-                  </div>
-
-                  {record.classification && <ClassificationCard data={record.classification} />}
-                  {record.routing && <RoutingCard data={record.routing} />}
-
-                  {record.responseError && !record.response && (
-                    <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-destructive text-sm flex items-start gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="m15 9-6 6" />
-                        <path d="m9 9 6 6" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold">Response generation failed</p>
-                        <p className="mt-0.5">{record.responseError}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {record.draft && <ClarificationCard draft={record.draft} />}
-                  {record.response && (
-                    <ResponseCard
-                      data={record.response}
-                      sent={record.sent}
-                      onSendResponse={onSendResponse ? () => onSendResponse(record.id) : undefined}
-                    />
-                  )}
-
-                  {record.error && (
-                    <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 text-destructive text-sm flex items-start gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="m15 9-6 6" />
-                        <path d="m9 9 6 6" />
-                      </svg>
-                      <div>
-                        <p className="font-semibold">Error</p>
-                        <p className="mt-0.5">{record.error}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {i < records.length - 1 && (
-                    <div className="border-b border-border/50 my-2" />
-                  )}
-                </motion.div>
-              ))
+              <div className="space-y-3">
+                {records.map((record, i) => (
+                  <EnquiryRow
+                    key={record.id}
+                    record={record}
+                    index={i}
+                    onClick={() => setSelectedRecordId(record.id)}
+                  />
+                ))}
+              </div>
             )}
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Modal */}
+      <AnimatePresence>
+        {selectedRecord && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-40"
+              onClick={() => setSelectedRecordId(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto pointer-events-auto">
+                <EnquiryEntryCard
+                  record={selectedRecord}
+                  index={0}
+                  config={config}
+                  onSendResponse={(id) => {
+                    onSendResponse?.(id);
+                    setSelectedRecordId(null);
+                  }}
+                  onSaveEdit={onSaveEdit}
+                  onSaveManualResponse={onSaveManualResponse}
+                  onGenerateResponse={(id, response) => {
+                    onGenerateResponse?.(id, response);
+                  }}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
